@@ -1,0 +1,474 @@
+---
+title: "Entregable 3"
+output:
+  flexdashboard::flex_dashboard:
+    social: 
+    navbar:
+        - { title: "Fuente de Datos", href: "https://proyectos.inei.gob.pe/microdatos/", align: right }
+
+---
+
+```{r setup, include=FALSE}
+library(readxl)
+library(rio)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(polycor)
+library(modelsummary)
+library(psych)
+library(e1071)
+library(ggplot2)
+library(arules)
+library(treemap)
+library(highcharter)
+library(polycor)
+library(ggcorrplot)
+library(psych)
+library(matrixcalc)
+library(GPArotation)
+library(stringr)
+library(cluster)
+library(factoextra)
+library(kableExtra)
+data <- read.csv("D:/R/REC91.csv", header = TRUE, sep = ";", stringsAsFactors = FALSE)
+
+data<- data %>% select(SREGION,SPROVIN,S108N,S112,S119,S119D) %>% rename(
+          
+          REGION = SREGION,
+          PROVINCIA = SPROVIN,
+          NIVEL_EDUCATIVO = S108N,
+          EMBARAZADA = S112,
+          LENGUA_MATERNA = S119,
+          GRUPO_ETNICO = S119D,
+        )
+
+
+data_clean <-data  %>%
+        mutate(
+          REGION = factor(case_when(
+            REGION == 1 ~ "Lima Metropolitana",
+            REGION == 2 ~ "Resto Costa",
+            REGION == 3 ~ "Sierra",
+            REGION == 4 ~ "Selva",
+            TRUE ~ "No especificado"
+          )),
+          NIVEL_EDUCATIVO = factor(case_when(
+            NIVEL_EDUCATIVO == 0 ~ "Inicial",
+            NIVEL_EDUCATIVO == 1 ~ "Primario",
+            NIVEL_EDUCATIVO == 2 ~ "Secundario",
+            NIVEL_EDUCATIVO == 3 ~ "Superior no universitario",
+            NIVEL_EDUCATIVO == 4 ~ "Superior universitario",
+            NIVEL_EDUCATIVO == 5 ~ "Posgrado",
+            TRUE ~ "No especificado"
+          )),
+          EMBARAZADA =factor(case_when(
+               
+            EMBARAZADA == 1 ~ "Embarazada",
+            EMBARAZADA == 2 ~ "Otro",
+            EMBARAZADA == 3 ~ "Otro",
+            EMBARAZADA == 4 ~ "Otro",
+            EMBARAZADA == 5 ~ "Otro",
+            EMBARAZADA == 6 ~ "Otro",
+            EMBARAZADA == 7 ~ "Otro",
+            EMBARAZADA == 8 ~ "Otro",
+            EMBARAZADA == 9 ~ "Otro",
+            EMBARAZADA == 10 ~ "Otro",
+            EMBARAZADA == 11 ~ "Otro",
+            EMBARAZADA == 12 ~ "Otro",
+            EMBARAZADA == 13 ~ "Otro",
+            EMBARAZADA == 96 ~ "Otro",
+            EMBARAZADA == 98 ~ "Otro",
+            TRUE ~ "Otro"
+          )),
+          LENGUA_MATERNA = factor(case_when(
+            LENGUA_MATERNA == 1 ~ "Quechua",
+            LENGUA_MATERNA == 2 ~ "Aymara",
+            LENGUA_MATERNA == 3 ~ "Ashaninka",
+            LENGUA_MATERNA == 4 ~ "Awajun",
+            LENGUA_MATERNA == 5 ~ "Shipibo",
+            LENGUA_MATERNA == 6 ~ "Shawi",
+            LENGUA_MATERNA == 7 ~ "Machiguenga",
+            LENGUA_MATERNA == 8 ~ "Achuar",
+            LENGUA_MATERNA == 9 ~ "Otra lengua",
+            LENGUA_MATERNA == 10 ~ "Castellano",
+            LENGUA_MATERNA == 11 ~ "Portugues",
+            LENGUA_MATERNA == 12 ~ "Otra lengua extranjera",
+            TRUE ~ "No especificado"
+          )),
+          GRUPO_ETNICO = factor(case_when(
+            GRUPO_ETNICO == 1 ~ "Procedencia Quechua",
+            GRUPO_ETNICO == 2 ~ "Procedencia Aimara",
+            GRUPO_ETNICO == 3 ~ "Procedencia Nativo o Indigena",
+            GRUPO_ETNICO == 4 ~ "Procedencia Parte de otro pueblo indigena",
+            GRUPO_ETNICO == 5 ~ "Procedencia Afroperuano",
+            GRUPO_ETNICO == 6 ~ "Procedencia Blanco",
+            GRUPO_ETNICO == 7 ~ "Procedencia Mestizo",
+            GRUPO_ETNICO == 8 ~ "Otro",
+            GRUPO_ETNICO == 98 ~ "No sabe",
+            TRUE ~ "No especificado"
+          )),
+          PROVINCIA = factor(case_when(
+            PROVINCIA == 1 ~ "Amazonas",
+            PROVINCIA == 2 ~ "Ancash",
+            PROVINCIA == 3 ~ "Apurimac",
+            PROVINCIA == 4 ~ "Arequipa",
+            PROVINCIA == 5 ~ "Ayacucho",
+            PROVINCIA == 6 ~ "Cajamarca",
+            PROVINCIA == 7 ~ "Callao",
+            PROVINCIA == 8 ~ "Cusco",
+            PROVINCIA == 9 ~ "Huancavelica",
+            PROVINCIA == 10 ~ "Huanuco",
+            PROVINCIA == 11 ~ "Ica",
+            PROVINCIA == 12 ~ "Junin",
+            PROVINCIA == 13 ~ "La Libertad",
+            PROVINCIA == 14 ~ "Lambayeque",
+            PROVINCIA == 15 ~ "Lima",
+            PROVINCIA == 16 ~ "Loreto",
+            PROVINCIA == 17 ~ "Madre de Dios",
+            PROVINCIA == 18 ~ "Moquegua",
+            PROVINCIA == 19 ~ "Pasco",
+            PROVINCIA == 20 ~ "Piura",
+            PROVINCIA == 21 ~ "Puno",
+            PROVINCIA == 22 ~ "San Martin",
+            PROVINCIA == 23 ~ "Tacna",
+            PROVINCIA == 24 ~ "Tumbes",
+            PROVINCIA == 25 ~ "Ucayali",
+            TRUE ~ "No especificado"
+          ))
+          
+        )
+
+data_clean_summary <- data_clean %>%
+  group_by(PROVINCIA) %>%
+  summarise(Count = n())
+
+tm <-treemap(
+  data_clean_summary,
+  index = "PROVINCIA",
+  vSize = "Count",
+  vColor = "Count",
+  title = "Distribución en provincias (Todos)",
+  palette = "RdYlBu",
+  draw = FALSE
+)
+
+```
+
+
+
+
+
+A.U. - Provincia
+=====================================
+
+
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Proporción de participantes por Provincia (Todos)
+```{r}
+hctreemap(tm, allowDrillToNode = TRUE, layoutAlgorithm = "squarified") 
+  
+```
+
+
+### Proporción de participantes por Provincia (Embarazadas)
+```{r}
+
+data_clean_summary <- data_clean %>% filter(EMBARAZADA == "Embarazada")
+data_clean_summary <- data_clean_summary %>%
+  group_by(PROVINCIA) %>%
+  summarise(Count = n())
+
+tm <-treemap(
+  data_clean_summary,
+  index = "PROVINCIA",
+  vSize = "Count",
+  vColor = "Count",
+  title = "Distribución en provincias (Todos)",
+  palette = "RdYlBu",
+  draw = FALSE
+)
+
+hctreemap(tm, allowDrillToNode = TRUE, layoutAlgorithm = "squarified") 
+  
+```
+
+
+
+
+
+
+
+A.U. - Educación
+=====================================
+
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Proporción de participantes por Nivel Educativo (Todos)
+```{r}
+data_clean_summary <- data_clean %>%
+  group_by(NIVEL_EDUCATIVO) %>%
+  summarise(Count = n())
+
+tm <-treemap(
+  data_clean_summary,
+  index = "NIVEL_EDUCATIVO",
+  vSize = "Count",
+  vColor = "Count",
+  title = "Distribución en provincias (Todos)",
+  palette = "RdYlBu",
+  draw = FALSE
+)
+
+hctreemap(tm, allowDrillToNode = TRUE, layoutAlgorithm = "squarified") 
+  
+```
+
+
+### Proporción de participantes por Nivel Educativo (Embarazadas)
+```{r}
+
+data_clean_summary <- data_clean %>% filter(EMBARAZADA == "Embarazada")
+data_clean_summary <- data_clean_summary %>%
+  group_by(NIVEL_EDUCATIVO) %>%
+  summarise(Count = n())
+
+tm <-treemap(
+  data_clean_summary,
+  index = "NIVEL_EDUCATIVO",
+  vSize = "Count",
+  vColor = "Count",
+  title = "Distribución en provincias (Todos)",
+  palette = "RdYlBu",
+  draw = FALSE
+)
+
+hctreemap(tm, allowDrillToNode = TRUE, layoutAlgorithm = "squarified") 
+  
+```
+
+
+
+A.U. - Lengua Materna
+=====================================
+
+
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Proporción de participantes por Lengua Materna (Todos)
+```{r}
+data_clean_summary <- data_clean %>%
+  group_by(LENGUA_MATERNA) %>%
+  summarise(Count = n())
+
+tm <-treemap(
+  data_clean_summary,
+  index = "LENGUA_MATERNA",
+  vSize = "Count",
+  vColor = "Count",
+  title = "Distribución en provincias (Todos)",
+  palette = "RdYlBu",
+  draw = FALSE
+)
+
+hctreemap(tm, allowDrillToNode = TRUE, layoutAlgorithm = "squarified") 
+  
+```
+
+
+### Proporción de participantes por Nivel Educativo (Embarazadas)
+```{r}
+
+data_clean_summary <- data_clean %>% filter(EMBARAZADA == "Embarazada")
+data_clean_summary <- data_clean_summary %>%
+  group_by(LENGUA_MATERNA) %>%
+  summarise(Count = n())
+
+tm <-treemap(
+  data_clean_summary,
+  index = "LENGUA_MATERNA",
+  vSize = "Count",
+  vColor = "Count",
+  title = "Distribución en provincias (Todos)",
+  palette = "RdYlBu",
+  draw = FALSE
+)
+
+hctreemap(tm, allowDrillToNode = TRUE, layoutAlgorithm = "squarified") 
+  
+```
+
+A.U. - Etnia
+=====================================
+
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Proporción de participantes por Lengua Materna (Todos)
+```{r}
+data_clean_summary <- data_clean %>%
+  group_by(GRUPO_ETNICO) %>% 
+  summarise(Count = n())
+
+tm <-treemap(
+  data_clean_summary,
+  index = "GRUPO_ETNICO",
+  vSize = "Count",
+  vColor = "Count",
+  title = "Distribución en provincias (Todos)",
+  palette = "RdYlBu",
+  draw = FALSE
+)
+
+hctreemap(tm, allowDrillToNode = TRUE, layoutAlgorithm = "squarified") 
+  
+```
+
+
+### Proporción de participantes por Nivel Educativo (Embarazadas)
+```{r}
+
+data_clean_summary <- data_clean %>% filter(EMBARAZADA == "Embarazada")
+data_clean_summary <- data_clean_summary %>%
+  group_by(GRUPO_ETNICO) %>%
+  summarise(Count = n())
+
+tm <-treemap(
+  data_clean_summary,
+  index = "GRUPO_ETNICO",
+  vSize = "Count",
+  vColor = "Count",
+  title = "Distribución en provincias (Todos)",
+  palette = "RdYlBu",
+  draw = FALSE
+)
+
+hctreemap(tm, allowDrillToNode = TRUE, layoutAlgorithm = "squarified") 
+  
+```
+
+A.M. - Correlación
+=====================================
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+### Correlacion Policorca
+```{r}
+
+
+
+data_clean_summary <- data_clean  %>% group_by(PROVINCIA) %>% summarise(
+  SI_EMBARAZADA = (sum(ifelse(EMBARAZADA == "Embarazada", 1, 0))/sum(ifelse(EMBARAZADA != ".", 1, 0)))*100,
+  SI_NIVEL_PRIMARIO = sum(ifelse(NIVEL_EDUCATIVO == "Secundario", 1, 0))/sum(ifelse(NIVEL_EDUCATIVO != ".", 1, 0))*100,
+  SI_LENGUA_NO_CASTELLANO = sum(ifelse(LENGUA_MATERNA != "Castellano", 1, 0))/sum(ifelse(LENGUA_MATERNA != ".", 1, 0))*100,
+  SI_ENTIA_NO_MESTIZO = sum(ifelse(GRUPO_ETNICO == "Procedencia Mestizo", 1, 0))/sum(ifelse(GRUPO_ETNICO != ".", 1, 0))*100)
+
+
+theData <- as.data.frame(data_clean_summary)
+
+theData <- theData %>% select(SI_EMBARAZADA,SI_NIVEL_PRIMARIO,SI_LENGUA_NO_CASTELLANO,SI_ENTIA_NO_MESTIZO)
+
+
+corMatrix = polycor::hetcor(theData)$correlations
+
+#round(corMatrix,2)
+
+ggcorrplot(corMatrix)
+  
+```
+
+
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+### Correlacion EFA
+```{r}
+#psych::KMO(corMatrix)
+#cortest.bartlett(corMatrix,n=nrow(theData))$p.value>0.05
+#is.singular.matrix(corMatrix)
+#fa.parallel(theData,fa='fa',correct=T,plot=F)
+resfa <- fa(theData,
+            nfactors = 2,
+            cor = 'mixed',
+            rotate = "varimax", 
+            fm="minres")
+
+
+fa.diagram(resfa,main = "Resultados del EFA")
+```
+
+
+
+
+A.M. - Factorial
+=====================================
+
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+
+
+### Número de clusters óptimo
+```{r}
+g.dist = daisy(theData,metric="gower")
+
+theData<-na.omit(theData)
+
+fviz_nbclust(theData, pam,diss=g.dist,method = "gap_stat",k.max = 10,verbose = F)
+```
+
+```{r}
+set.seed(123)
+
+res.agnes <- hcut(g.dist,k=5,hc_func = "agnes",hc_method = "ward.D")
+
+theData$agnes <- res.agnes$cluster[1:nrow(theData)]
+
+```
+
+### Ploteo de Silueta de clusters
+```{r}
+
+fviz_silhouette(res.agnes,print.summary = F)
+```
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+
+
+```{r}
+silAGNES=data.frame(res.agnes$silinfo$widths)
+silAGNES$country=row.names(silAGNES)
+poorAGNES=silAGNES[silAGNES$sil_width<0,'country']%>%sort()
+```
+
+### Número de clusters óptimo
+```{r}
+fviz_nbclust(theData, hcut,diss=g.dist,method = "gap_stat",k.max = 10,verbose = F,hc_func = "diana")
+```
+```{r}
+# Poner el numero anterior en K
+set.seed(123)
+res.diana <- hcut(g.dist, k = 5,hc_func='diana')
+theData$diana=res.diana$cluster[1:nrow(theData)]
+# veamos
+
+```
+
+
+### Ploteo de Silueta de clusters
+```{r}
+fviz_silhouette(res.diana,print.summary = F)
+```
